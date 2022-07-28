@@ -1,4 +1,5 @@
 import React from 'react';
+import { Route } from 'react-router-dom';
 import axios from 'axios';
 import Card from './components/Card';
 import Header from './components/Header';
@@ -8,6 +9,7 @@ import Drawer from './components/Drawer';
 function App() {
   const [items, setItems] = React.useState([]);
   const [cartItems, setCartItems] = React.useState([]);
+  const [favorites, setFavorites] = React.useState([]);
   const [searchValue, setSearchValue] = React.useState('');
   const [cartOpened, setCartOpened] = React.useState(false);
 
@@ -34,12 +36,12 @@ function App() {
   const onAddToCart = (obj) => {
     // пошук елемента в масиві вже доданих в корзину
     let itemFound = cartItems.find(item => item.title === obj.title);
-    
-    if (itemFound===undefined) {
+
+    if (itemFound === undefined) {
       //додаємо вибраний товар на бекенд в корзину з допомогою бібліотеки axios
       axios.post('https://62d99d305d893b27b2ea75e5.mockapi.io/cart', obj);
       /////
-      setCartItems(prev => [... prev, obj]); // аналогія в реакт метода пуш для масиву, коли хочемо додати обєкт в нього    
+      setCartItems(prev => [...prev, obj]); // аналогія в реакт метода пуш для масиву, коли хочемо додати обєкт в нього    
     }
     else {
       setCartItems(cartItems.filter(p => p.title !== itemFound.title));
@@ -48,7 +50,12 @@ function App() {
 
   const onRemoveItem = (id) => {
     axios.delete(`https://62d99d305d893b27b2ea75e5.mockapi.io/cart/${id}`);
-    setCartItems(prev => prev.filter(item => item.id !== id)); 
+    setCartItems(prev => prev.filter(item => item.id !== id));
+  }
+
+  const onAddToFavorite = (obj) => {
+    axios.post('https://62d99d305d893b27b2ea75e5.mockapi.io/favorites', obj);
+    setFavorites(prev => [...prev, obj]);
   }
 
   const onChangeSearchInput = (event) => {
@@ -58,9 +65,11 @@ function App() {
 
   return (
     <div className="wrapper clear">
-      {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove = {onRemoveItem} /> }
-       
+      {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem} />}
+
       <Header onClickCart={() => setCartOpened(true)} />
+      
+      <Route path="/favorites" exact>Test info</Route>
 
       <div className="content p-40">
         <div className="d-flex align-center justify-between mb-40">
@@ -74,18 +83,18 @@ function App() {
         <div className="d-flex flex-wrap">
           {
             items
-            .filter(item => item.title.toLowerCase().includes(searchValue.toLowerCase()))
-            .map((item, index)=>(
+              .filter(item => item.title.toLowerCase().includes(searchValue.toLowerCase()))
+              .map((item, index) => (
                 <Card
-                  key={index} 
+                  key={index}
                   title={item.title}
                   price={item.price}
                   imageUrl={item.imageUrl}
-                  onClickFavorite={()=>console.log('add to fav')}
+                  onAddFavorite={(obj) => onAddToFavorite(obj)}
                   onPlus={(obj) => onAddToCart(obj)}
                 />
               )
-            )
+              )
           }
         </div>
       </div>
