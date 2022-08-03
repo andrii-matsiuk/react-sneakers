@@ -1,9 +1,10 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
 import axios from 'axios';
-import Card from './components/Card';
 import Header from './components/Header';
 import Drawer from './components/Drawer';
+import Home from './pages/Home';
+import Favorites from './pages/Favorites';
 
 
 function App() {
@@ -27,35 +28,49 @@ function App() {
     axios.get('https://62d99d305d893b27b2ea75e5.mockapi.io/items').then(res => {
       setItems(res.data);
     });
+    
     //отримання товарів доданих в корзину на сервері
     axios.get('https://62d99d305d893b27b2ea75e5.mockapi.io/cart').then(res => {
       setCartItems(res.data);
+    });
+
+    //отримання товарів доданих у вибране
+    axios.get('https://62d99d305d893b27b2ea75e5.mockapi.io/favorites').then(res => {
+      setFavorites(res.data);
     });
   }, []);
 
   const onAddToCart = (obj) => {
     // пошук елемента в масиві вже доданих в корзину
-    let itemFound = cartItems.find(item => item.title === obj.title);
-
-    if (itemFound === undefined) {
+    if (cartItems.find(item => item.title === obj.title)) {
       //додаємо вибраний товар на бекенд в корзину з допомогою бібліотеки axios
       axios.post('https://62d99d305d893b27b2ea75e5.mockapi.io/cart', obj);
       /////
-      setCartItems(prev => [...prev, obj]); // аналогія в реакт метода пуш для масиву, коли хочемо додати обєкт в нього    
+      setCartItems((prev) => [...prev, obj]); // аналогія в реакт метода пуш для масиву, коли хочемо додати обєкт в нього    
     }
     else {
-      setCartItems(cartItems.filter(p => p.title !== itemFound.title));
+      setCartItems(cartItems.filter(p => p.title !== obj.title));
     }
   }
 
   const onRemoveItem = (id) => {
     axios.delete(`https://62d99d305d893b27b2ea75e5.mockapi.io/cart/${id}`);
-    setCartItems(prev => prev.filter(item => item.id !== id));
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
   }
 
-  const onAddToFavorite = (obj) => {
-    axios.post('https://62d99d305d893b27b2ea75e5.mockapi.io/favorites', obj);
-    setFavorites(prev => [...prev, obj]);
+  const onAddToFavorite = async (obj) => {
+   try { 
+    if (favorites.find(favObj => favObj.id === obj.id)) {
+      axios.delete(`https://62d99d305d893b27b2ea75e5.mockapi.io/favorites/${obj.id}`);  
+      setFavorites((prev) => prev.filter((item) => item.id !== obj.id));
+    }
+    else {
+      const {data} = await axios.post('https://62d99d305d893b27b2ea75e5.mockapi.io/favorites', obj);
+      setFavorites((prev) => [...prev, data]);
+    }
+   } catch (error) {
+     alert('Couldnt add item to favorite');
+   }
   }
 
   const onChangeSearchInput = (event) => {
@@ -69,35 +84,22 @@ function App() {
 
       <Header onClickCart={() => setCartOpened(true)} />
       
-      <Route path="/favorites" exact>Test info</Route>
+      <Route path="/" exact>
+        <Home 
+          items={items}
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
+          onChangeSearchInput={onChangeSearchInput}
+          onAddToFavorite={onAddToFavorite}
+          onAddToCart={onAddToCart}
+        />
+      </Route>
 
-      <div className="content p-40">
-        <div className="d-flex align-center justify-between mb-40">
-          <h1>{searchValue ? `Search: "${searchValue}"` : 'All sneakers'}</h1>
-          <div className="search-block d-flex">
-            <img src="/img/search.svg" alt="Search" />
-            {searchValue && <img onClick={() => setSearchValue('')} className="clear cu-p" src="/img/btn-remove.svg" alt="clear" />}
-            <input onChange={onChangeSearchInput} value={searchValue} placeholder="Search..." />
-          </div>
-        </div>
-        <div className="d-flex flex-wrap">
-          {
-            items
-              .filter(item => item.title.toLowerCase().includes(searchValue.toLowerCase()))
-              .map((item, index) => (
-                <Card
-                  key={index}
-                  title={item.title}
-                  price={item.price}
-                  imageUrl={item.imageUrl}
-                  onAddFavorite={(obj) => onAddToFavorite(obj)}
-                  onPlus={(obj) => onAddToCart(obj)}
-                />
-              )
-              )
-          }
-        </div>
-      </div>
+      <Route path="/favorites" exact>
+        <Favorites items={favorites} onAddToFavorite={onAddToFavorite} />
+      </Route>
+
+      
     </div>
   )
 }
