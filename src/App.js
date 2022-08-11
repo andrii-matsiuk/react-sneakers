@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Route } from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/Header';
@@ -6,6 +6,7 @@ import Drawer from './components/Drawer';
 import Home from './pages/Home';
 import Favorites from './pages/Favorites';
 
+export const AppContext = React.createContext({});
 
 function App() {
   const [items, setItems] = React.useState([]);
@@ -13,8 +14,9 @@ function App() {
   const [favorites, setFavorites] = React.useState([]);
   const [searchValue, setSearchValue] = React.useState('');
   const [cartOpened, setCartOpened] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // // отримання даних методом fetch
     // fetch('https://62d99d305d893b27b2ea75e5.mockapi.io/items')
     // .then((res) => {
@@ -24,83 +26,99 @@ function App() {
     //   setItems(json);
     // });
 
-    // отримання товарів із сервера через бібліотеку axios
-    axios.get('https://62d99d305d893b27b2ea75e5.mockapi.io/items').then(res => {
-      setItems(res.data);
-    });
-    
-    //отримання товарів доданих в корзину на сервері
-    axios.get('https://62d99d305d893b27b2ea75e5.mockapi.io/cart').then(res => {
-      setCartItems(res.data);
-    });
+    async function fetchData() {
+      setIsLoading(true);
+      //отримання товарів доданих в корзину на сервері
+      const cartItemsResponse = await axios.get('https://62d99d305d893b27b2ea75e5.mockapi.io/cart');
+      //отримання товарів доданих у вибране
+      const favItemsResponse = await axios.get('https://62d99d305d893b27b2ea75e5.mockapi.io/favorites');
+      // отримання товарів із сервера через бібліотеку axios 
+      const itemsResponse = await axios.get('https://62d99d305d893b27b2ea75e5.mockapi.io/items');
 
-    //отримання товарів доданих у вибране
-    axios.get('https://62d99d305d893b27b2ea75e5.mockapi.io/favorites').then(res => {
-      setFavorites(res.data);
-    });
+      setIsLoading(false);
+
+      setCartItems(cartItemsResponse.data);
+      setFavorites(favItemsResponse.data);
+      setItems(itemsResponse.data);
+    };
+
+    fetchData();
   }, []);
 
   const onAddToCart = (obj) => {
-    // пошук елемента в масиві вже доданих в корзину
-    if (cartItems.find(item => item.title === obj.title)) {
-      //додаємо вибраний товар на бекенд в корзину з допомогою бібліотеки axios
-      axios.post('https://62d99d305d893b27b2ea75e5.mockapi.io/cart', obj);
-      /////
-      setCartItems((prev) => [...prev, obj]); // аналогія в реакт метода пуш для масиву, коли хочемо додати обєкт в нього    
-    }
-    else {
-      setCartItems(cartItems.filter(p => p.title !== obj.title));
+    try {
+      // якщо знайшли передайний товар в корзині, повторно не додаємо, а видаляємо
+      if (cartItems.find((item) => Number(item.article) === Number(obj.article))) {
+        setCartItems((prev) => prev.filter((item) => Number(item.article) !== Number(obj.article)));
+        axios.delete(`https://62d99d305d893b27b2ea75e5.mockapi.io/cart/${obj.article}`);
+      }
+      else {
+        //додаємо вибраний товар на бекенд в корзину з допомогою бібліотеки axios
+        axios.post('https://62d99d305d893b27b2ea75e5.mockapi.io/cart', obj);
+        setCartItems((prev) => [...prev, obj]); // аналогія в реакт метода пуш для масиву, коли хочемо додати обєкт в нього
+      }
+    } catch (error) {
+      alert('Coulndt add item to cart');
     }
   }
 
-  const onRemoveItem = (id) => {
-    axios.delete(`https://62d99d305d893b27b2ea75e5.mockapi.io/cart/${id}`);
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  const onRemoveItem = (obj) => {
+    axios.delete(`https://62d99d305d893b27b2ea75e5.mockapi.io/cart/${obj.id}`);
+    setCartItems((prev) => prev.filter((item) => Number(item.article) !== Number(obj.article)));
   }
 
   const onAddToFavorite = async (obj) => {
-   try { 
-    if (favorites.find(favObj => favObj.id === obj.id)) {
-      axios.delete(`https://62d99d305d893b27b2ea75e5.mockapi.io/favorites/${obj.id}`);  
-      setFavorites((prev) => prev.filter((item) => item.id !== obj.id));
+    try {
+      console.log(obj);
+      if (favorites.find((favObj) => Number(favObj.article) === Number(obj.article))) {
+        axios.delete(`https://62d99d305d893b27b2ea75e5.mockapi.io/favorites/${obj.id}`);
+        setFavorites((prev) => prev.filter((item) => Number(item.article) !== Number(obj.article)));
+        console.log('removed from fav');
+      }
+      else {
+        const { data } = await axios.post('https://62d99d305d893b27b2ea75e5.mockapi.io/favorites', obj);
+        setFavorites((prev) => [...prev, data]);
+        console.log('added to fav');
+      }
+    } catch (error) {
+      alert('Couldnt add item to favorite');
     }
-    else {
-      const {data} = await axios.post('https://62d99d305d893b27b2ea75e5.mockapi.io/favorites', obj);
-      setFavorites((prev) => [...prev, data]);
-    }
-   } catch (error) {
-     alert('Couldnt add item to favorite');
-   }
   }
 
   const onChangeSearchInput = (event) => {
-    //console.log(event.target.value);
     setSearchValue(event.target.value);
   }
 
+  const isItemAdded = (article) => {
+    return cartItems.some((obj) => Number(obj.article) === Number(article)); // аналогічно запису added={true}. Метод some вертає true якщо умова виконується, якщо ні - false
+  }
+
   return (
-    <div className="wrapper clear">
-      {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem} />}
+    <AppContext.Provider value={ {items, cartItems,  favorites, isItemAdded, onAddToFavorite, setCartOpened, setCartItems} }>
+      <div className="wrapper clear">
+        {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem} />}
 
-      <Header onClickCart={() => setCartOpened(true)} />
-      
-      <Route path="/" exact>
-        <Home 
-          items={items}
-          searchValue={searchValue}
-          setSearchValue={setSearchValue}
-          onChangeSearchInput={onChangeSearchInput}
-          onAddToFavorite={onAddToFavorite}
-          onAddToCart={onAddToCart}
-        />
-      </Route>
+        <Header onClickCart={() => setCartOpened(true)} />
 
-      <Route path="/favorites" exact>
-        <Favorites items={favorites} onAddToFavorite={onAddToFavorite} />
-      </Route>
+        <Route path="/" exact>
+          <Home
+            items={items}
+            cartItems={cartItems}
+            searchValue={searchValue}
+            setSearchValue={setSearchValue}
+            onChangeSearchInput={onChangeSearchInput}
+            onAddToFavorite={onAddToFavorite}
+            onAddToCart={onAddToCart}
+            isLoading={isLoading}
+          />
+        </Route>
 
-      
-    </div>
+        <Route path="/favorites" exact>
+          <Favorites />
+        </Route>
+
+      </div>
+    </AppContext.Provider>
   )
 }
 
