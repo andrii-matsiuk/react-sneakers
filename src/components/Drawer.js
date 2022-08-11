@@ -1,13 +1,14 @@
 import Info from "./Info";
 import React from "react";
-import { AppContext } from "../App";
+
 import axios from "axios";
+import { useCart } from "../hooks/useCart";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 
 function Drawer({ onClose, onRemove, items = [] }) {
-    const { cartItems, setCartItems } = React.useContext(AppContext);
+    const { cartItems, setCartItems, totalPrice } = useCart();
     const [orderId, setOrderId] = React.useState(null);
     const [isOrderComplete, setIsOrderComplete] = React.useState(false);
     const [isLoadingCart, setIsLoadingCart] = React.useState(false);
@@ -59,12 +60,12 @@ function Drawer({ onClose, onRemove, items = [] }) {
                                 <li>
                                     <span>Summary:</span>
                                     <div></div>
-                                    <b>1205 USD</b>
+                                    <b>{totalPrice} USD</b>
                                 </li>
                                 <li>
                                     <span>Tax 5%:</span>
                                     <div></div>
-                                    <b>205 USD</b>
+                                    <b>{totalPrice / 100 * 5} USD</b>
                                 </li>
                             </ul>
                             <button disabled={isLoadingCart} onClick={onClickOrder} className="greenButton">Order<img src="/img/arrow.svg" alt="arrow" /></button>
