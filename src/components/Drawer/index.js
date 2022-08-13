@@ -41,7 +41,7 @@ function Drawer({ onClose, onRemove, opened, items = [] }) {
     return (
         <div className={`${styles.overlay} ${opened ? styles.overlayVisible : ''} `}>
             <div className={styles.drawer}>
-                <h2 className="mb-30 d-flex justify-between">Cart<img onClick={onClose} className="removeBtn cu-p" src="/img/btn-remove.svg" alt="remove" /></h2>
+                <h2 className="mb-30 d-flex justify-between">Cart<img onClick={onClose} className="removeBtn cu-p" src="img/btn-remove.svg" alt="remove" /></h2>
 
                 {items.length > 0 ?
                     (<div className="d-flex flex-column flex">
@@ -53,7 +53,7 @@ function Drawer({ onClose, onRemove, opened, items = [] }) {
                                         <p className="mb-5">{obj.title}</p>
                                         <b>{obj.price} USD</b>
                                     </div>
-                                    <img className="removeBtn" onClick={() => onRemove(obj)} src="/img/btn-remove.svg" alt="remove" />
+                                    <img className="removeBtn" onClick={() => onRemove(obj)} src="img/btn-remove.svg" alt="remove" />
                                 </div>
                             ))}
                         </div>
@@ -70,7 +70,7 @@ function Drawer({ onClose, onRemove, opened, items = [] }) {
                                     <b>{totalPrice / 100 * 5} USD</b>
                                 </li>
                             </ul>
-                            <button disabled={isLoadingCart} onClick={onClickOrder} className="greenButton">Order<img src="/img/arrow.svg" alt="arrow" /></button>
+                            <button disabled={isLoadingCart} onClick={onClickOrder} className="greenButton">Order<img src="img/arrow.svg" alt="arrow" /></button>
                         </div>
                     </div>)
                     :
@@ -78,7 +78,7 @@ function Drawer({ onClose, onRemove, opened, items = [] }) {
                         <Info
                             title={isOrderComplete ? "Your order has been sent!" : "Cart is empty"}
                             description={isOrderComplete ? `Your order #${orderId} will be get by post office` : "Add at least one pair of sneackers to make the order"}
-                            image={isOrderComplete ? "/img/complete-order.png" : "/img/empty-cart.jpg"}
+                            image={isOrderComplete ? "img/complete-order.png" : "img/empty-cart.jpg"}
                         />
                     )
                 }
