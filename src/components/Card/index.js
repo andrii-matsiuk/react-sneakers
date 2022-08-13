@@ -5,7 +5,7 @@ import { AppContext } from '../../App';
 
 function Card({
     article, 
-    id, 
+    id,
     onPlus, 
     onAddFavorite, 
     title, 
@@ -14,12 +14,13 @@ function Card({
     favorited = false, 
     loading = false,
 }) {
+    const obj = { article, id, parentId: id, title, price, imageUrl };
 
     const {isItemAdded} = React.useContext(AppContext);
     const [isFavorite, setIsFavorite] = useState(favorited);
 
     const onClickPlus = () => {
-        onPlus({ article, id, title, price, imageUrl });
+        onPlus(obj);
     }
 
     const onClickFavorite = () => {
@@ -61,12 +62,12 @@ function Card({
                                 <span>Price:</span>
                                 <b>{price} USD</b>
                             </div>
-                            <img
+                            {onPlus && <img
                                 className={styles.plus}
                                 onClick={onClickPlus}
-                                src={isItemAdded(article) ? "/img/btn-cheked.svg" : "/img/btn-plus.svg"}
+                                src={isItemAdded(id) ? "/img/btn-cheked.svg" : "/img/btn-plus.svg"}
                                 alt="plus"
-                            />
+                            />}
                         </div>
                     </>
                     )
